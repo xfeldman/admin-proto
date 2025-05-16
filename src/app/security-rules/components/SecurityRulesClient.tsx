@@ -44,6 +44,17 @@ const allPermissions: Permission[] = ['Read', 'Add', 'Edit', 'Modify', 'Delete',
 // All available resources
 const allResources: string[] = ['Group Members', 'Forum Categories', 'Category1', 'Category2', 'User Profiles', 'System Settings', 'Audit Logs'];
 
+// Resource descriptions
+const resourceDescriptions: Record<string, string> = {
+  'Group Members': 'Manage members of your groups',
+  'Forum Categories': 'Organize discussions by topics',
+  'Category1': 'First level categorization',
+  'Category2': 'Second level categorization',
+  'User Profiles': 'User account information',
+  'System Settings': 'Configure system parameters',
+  'Audit Logs': 'Track system activities'
+};
+
 export default function SecurityRulesClient() {
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
@@ -314,7 +325,12 @@ export default function SecurityRulesClient() {
                   <tr key={index} className="border-b dark:border-gray-600">
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
                       <div className="flex justify-between items-center">
-                        <span>{resource.name}</span>
+                        <div className="flex flex-col">
+                          <span>{resource.name}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {resourceDescriptions[resource.name] || ''}
+                          </span>
+                        </div>
                         <button
                           className="text-red-500 hover:text-red-700 ml-2"
                           onClick={() => handleRemoveResource(index)}
@@ -416,7 +432,12 @@ export default function SecurityRulesClient() {
                           });
                         }}
                       >
-                        {resource}
+                        <div className="flex flex-col">
+                          <span>{resource}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {resourceDescriptions[resource] || ''}
+                          </span>
+                        </div>
                       </div>
                     ))}
                 </div>

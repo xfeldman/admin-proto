@@ -304,7 +304,7 @@ export default function SecurityRulesClient() {
                       {/* Custom dropdown with checkboxes */}
                       <div 
                         className="relative" 
-                        ref={el => dropdownRefs.current[index] = el}
+                        ref={el => { dropdownRefs.current[index] = el; }}
                       >
                         <button
                           type="button"

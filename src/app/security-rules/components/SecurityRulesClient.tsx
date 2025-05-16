@@ -41,6 +41,9 @@ const initialRules: Rule[] = [
 // All available permissions
 const allPermissions: Permission[] = ['Read', 'Add', 'Edit', 'Modify', 'Delete', 'Post'];
 
+// All available resources
+const allResources: string[] = ['Group Members', 'Forum Categories', 'Category1', 'Category2', 'User Profiles', 'System Settings', 'Audit Logs'];
+
 export default function SecurityRulesClient() {
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
@@ -48,8 +51,10 @@ export default function SecurityRulesClient() {
   const [newResourceName, setNewResourceName] = useState<string>('');
   const [isAddingResource, setIsAddingResource] = useState<boolean>(false);
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
+  const [isResourceDropdownOpen, setIsResourceDropdownOpen] = useState<boolean>(false);
   const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
   const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const resourceDropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Get the currently selected rule
   const selectedRule = rules.find(rule => rule.id === selectedRuleId) || rules[0];
@@ -94,13 +99,21 @@ export default function SecurityRulesClient() {
     setOpenDropdownIndex(openDropdownIndex === index ? null : index);
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      // Handle permissions dropdown
       if (openDropdownIndex !== null && 
           dropdownRefs.current[openDropdownIndex] && 
           !dropdownRefs.current[openDropdownIndex]?.contains(event.target as Node)) {
         setOpenDropdownIndex(null);
+      }
+
+      // Handle resource dropdown
+      if (isResourceDropdownOpen && 
+          resourceDropdownRef.current && 
+          !resourceDropdownRef.current.contains(event.target as Node)) {
+        setIsResourceDropdownOpen(false);
       }
     };
 
@@ -108,7 +121,7 @@ export default function SecurityRulesClient() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [openDropdownIndex]);
+  }, [openDropdownIndex, isResourceDropdownOpen]);
 
   // Update dropdown refs when resources change
   useEffect(() => {
@@ -124,17 +137,18 @@ export default function SecurityRulesClient() {
   // Add new resource
   const handleAddResource = () => {
     if (isAddingResource) {
-      if (newResourceName.trim()) {
+      if (newResourceName) {
         setEditingRule({
           ...editingRule,
           resources: [
             ...editingRule.resources,
-            { name: newResourceName.trim(), permissions: [] }
+            { name: newResourceName, permissions: [] }
           ]
         });
         setNewResourceName('');
       }
       setIsAddingResource(false);
+      setIsResourceDropdownOpen(false);
     } else {
       setIsAddingResource(true);
     }
@@ -194,6 +208,13 @@ export default function SecurityRulesClient() {
   // Cancel delete rule
   const cancelDeleteRule = () => {
     setDeletingRuleId(null);
+  };
+
+  // Remove resource
+  const handleRemoveResource = (index: number) => {
+    const updatedResources = [...editingRule.resources];
+    updatedResources.splice(index, 1);
+    setEditingRule({ ...editingRule, resources: updatedResources });
   };
 
   return (
@@ -298,7 +319,16 @@ export default function SecurityRulesClient() {
                 {editingRule.resources.map((resource, index) => (
                   <tr key={index} className="border-b dark:border-gray-600">
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
-                      {resource.name}
+                      <div className="flex justify-between items-center">
+                        <span>{resource.name}</span>
+                        <button
+                          className="text-red-500 hover:text-red-700 ml-2"
+                          onClick={() => handleRemoveResource(index)}
+                          aria-label={`Remove ${resource.name}`}
+                        >
+                          ×
+                        </button>
+                      </div>
                     </td>
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
                       {/* Custom dropdown with checkboxes */}
@@ -357,19 +387,45 @@ export default function SecurityRulesClient() {
                 {isAddingResource && (
                   <tr>
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
-                      <input 
-                        type="text" 
-                        className="w-full p-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                        value={newResourceName}
-                        onChange={(e) => setNewResourceName(e.target.value)}
-                        placeholder="Resource name"
-                        autoFocus
-                      />
+                      <div className="relative" ref={resourceDropdownRef}>
+                        <button
+                          type="button"
+                          className="w-full p-1 text-sm border rounded flex justify-between items-center dark:bg-gray-700 dark:border-gray-600"
+                          onClick={() => setIsResourceDropdownOpen(!isResourceDropdownOpen)}
+                        >
+                          <span className={newResourceName ? "" : "text-gray-400"}>
+                            {newResourceName || "Select a resource..."}
+                          </span>
+                          <span className="ml-2 flex-shrink-0">
+                            {isResourceDropdownOpen ? '▲' : '▼'}
+                          </span>
+                        </button>
+
+                        {isResourceDropdownOpen && (
+                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto">
+                            {allResources
+                              .filter(resource => !editingRule.resources.some(r => r.name === resource))
+                              .map(resource => (
+                                <div 
+                                  key={resource}
+                                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                                  onClick={() => {
+                                    setNewResourceName(resource);
+                                    setIsResourceDropdownOpen(false);
+                                  }}
+                                >
+                                  {resource}
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
                       <button 
                         className="text-blue-500 hover:text-blue-600 text-sm"
                         onClick={handleAddResource}
+                        disabled={!newResourceName}
                       >
                         Add
                       </button>

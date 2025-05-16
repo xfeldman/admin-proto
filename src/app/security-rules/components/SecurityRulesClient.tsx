@@ -55,11 +55,21 @@ const resourceDescriptions: Record<string, string> = {
   'Audit Logs': 'Track system activities'
 };
 
+// Permission descriptions
+const permissionDescriptions: Record<Permission, string> = {
+  'Read': 'View the resource and its contents',
+  'Add': 'Create new items within the resource',
+  'Edit': 'Make changes to existing items',
+  'Modify': 'Change resource settings and properties',
+  'Delete': 'Remove items from the resource',
+  'Post': 'Submit content to the resource'
+};
+
 export default function SecurityRulesClient() {
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
   const [editingRule, setEditingRule] = useState<Rule>(initialRules[0]);
-  const [newResourceName, setNewResourceName] = useState<string>('');
+  const [newResourceName] = useState<string>('');
   const [isResourceDropdownOpen, setIsResourceDropdownOpen] = useState<boolean>(false);
   const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
   const resourceDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -119,20 +129,6 @@ export default function SecurityRulesClient() {
     };
   }, [isResourceDropdownOpen]);
 
-  // Add new resource
-  const handleAddResource = () => {
-    if (newResourceName) {
-      setEditingRule({
-        ...editingRule,
-        resources: [
-          ...editingRule.resources,
-          { name: newResourceName, permissions: [] }
-        ]
-      });
-      setNewResourceName('');
-      setIsResourceDropdownOpen(false);
-    }
-  };
 
   // Save changes
   const handleSaveChanges = () => {
@@ -328,6 +324,7 @@ export default function SecurityRulesClient() {
                                   : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
                               }`}
                               onClick={() => handlePermissionChange(index, permission)}
+                              title={permissionDescriptions[permission]}
                             >
                               <span className="mr-1">
                                 {isEnabled 

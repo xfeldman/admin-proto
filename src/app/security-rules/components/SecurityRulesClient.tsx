@@ -49,7 +49,6 @@ export default function SecurityRulesClient() {
   const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
   const [editingRule, setEditingRule] = useState<Rule>(initialRules[0]);
   const [newResourceName, setNewResourceName] = useState<string>('');
-  const [isAddingResource, setIsAddingResource] = useState<boolean>(false);
   const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [isResourceDropdownOpen, setIsResourceDropdownOpen] = useState<boolean>(false);
   const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
@@ -136,21 +135,16 @@ export default function SecurityRulesClient() {
 
   // Add new resource
   const handleAddResource = () => {
-    if (isAddingResource) {
-      if (newResourceName) {
-        setEditingRule({
-          ...editingRule,
-          resources: [
-            ...editingRule.resources,
-            { name: newResourceName, permissions: [] }
-          ]
-        });
-        setNewResourceName('');
-      }
-      setIsAddingResource(false);
+    if (newResourceName) {
+      setEditingRule({
+        ...editingRule,
+        resources: [
+          ...editingRule.resources,
+          { name: newResourceName, permissions: [] }
+        ]
+      });
+      setNewResourceName('');
       setIsResourceDropdownOpen(false);
-    } else {
-      setIsAddingResource(true);
     }
   };
 
@@ -218,7 +212,7 @@ export default function SecurityRulesClient() {
   };
 
   return (
-    <div className="min-h-screen p-6">
+    <div className="h-screen p-6 flex flex-col">
       <h1 className="text-2xl font-bold mb-6">Security Rules</h1>
 
       {/* Confirmation Dialog */}
@@ -247,9 +241,9 @@ export default function SecurityRulesClient() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-6 flex-grow overflow-hidden">
         {/* Left Panel - Rules List */}
-        <div className="w-full md:w-1/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+        <div className="w-full md:w-1/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Rules</h2>
             <button 
@@ -294,7 +288,7 @@ export default function SecurityRulesClient() {
         </div>
 
         {/* Main Panel - Rule Editing */}
-        <div className="w-full md:w-3/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+        <div className="w-full md:w-3/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex flex-col overflow-y-auto h-full">
           <h2 className="text-lg font-semibold mb-4">Edit Rule: {selectedRule.name}</h2>
 
           <div className="mb-4">
@@ -384,67 +378,50 @@ export default function SecurityRulesClient() {
                   </tr>
                 ))}
 
-                {isAddingResource && (
-                  <tr>
-                    <td className="border border-gray-200 dark:border-gray-600 p-2">
-                      <div className="relative" ref={resourceDropdownRef}>
-                        <button
-                          type="button"
-                          className="w-full p-1 text-sm border rounded flex justify-between items-center dark:bg-gray-700 dark:border-gray-600"
-                          onClick={() => setIsResourceDropdownOpen(!isResourceDropdownOpen)}
-                        >
-                          <span className={newResourceName ? "" : "text-gray-400"}>
-                            {newResourceName || "Select a resource..."}
-                          </span>
-                          <span className="ml-2 flex-shrink-0">
-                            {isResourceDropdownOpen ? '▲' : '▼'}
-                          </span>
-                        </button>
-
-                        {isResourceDropdownOpen && (
-                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto">
-                            {allResources
-                              .filter(resource => !editingRule.resources.some(r => r.name === resource))
-                              .map(resource => (
-                                <div 
-                                  key={resource}
-                                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-                                  onClick={() => {
-                                    setNewResourceName(resource);
-                                    setIsResourceDropdownOpen(false);
-                                  }}
-                                >
-                                  {resource}
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="border border-gray-200 dark:border-gray-600 p-2">
-                      <button 
-                        className="text-blue-500 hover:text-blue-600 text-sm"
-                        onClick={handleAddResource}
-                        disabled={!newResourceName}
-                      >
-                        Add
-                      </button>
-                    </td>
-                  </tr>
-                )}
-
-                <tr>
-                  <td colSpan={2} className="p-2">
-                    <button 
-                      className="text-blue-500 hover:text-blue-600 text-sm"
-                      onClick={handleAddResource}
-                    >
-                      {isAddingResource ? 'Cancel' : '+ Add Resource'}
-                    </button>
-                  </td>
-                </tr>
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-4 mb-4">
+            <div className="relative w-1/2" ref={resourceDropdownRef}>
+              <button
+                type="button"
+                className="w-full p-1 text-sm border rounded flex justify-between items-center dark:bg-gray-700 dark:border-gray-600"
+                onClick={() => setIsResourceDropdownOpen(!isResourceDropdownOpen)}
+              >
+                <span className={newResourceName ? "" : "text-gray-400"}>
+                  {newResourceName || "Select a resource to add it to the table"}
+                </span>
+                <span className="ml-2 flex-shrink-0">
+                  {isResourceDropdownOpen ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {isResourceDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto">
+                  {allResources
+                    .filter(resource => !editingRule.resources.some(r => r.name === resource))
+                    .map(resource => (
+                      <div 
+                        key={resource}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                        onClick={() => {
+                          setIsResourceDropdownOpen(false);
+                          setEditingRule({
+                            ...editingRule,
+                            resources: [
+                              ...editingRule.resources,
+                              { name: resource, permissions: [] }
+                            ]
+                          });
+                        }}
+                      >
+                        {resource}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-4 flex justify-end gap-2">

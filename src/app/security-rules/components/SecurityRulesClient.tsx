@@ -60,10 +60,8 @@ export default function SecurityRulesClient() {
   const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
   const [editingRule, setEditingRule] = useState<Rule>(initialRules[0]);
   const [newResourceName, setNewResourceName] = useState<string>('');
-  const [openDropdownIndex, setOpenDropdownIndex] = useState<number | null>(null);
   const [isResourceDropdownOpen, setIsResourceDropdownOpen] = useState<boolean>(false);
   const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
-  const dropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
   const resourceDropdownRef = useRef<HTMLDivElement | null>(null);
 
   // Get the currently selected rule
@@ -104,21 +102,9 @@ export default function SecurityRulesClient() {
     setEditingRule({ ...editingRule, resources: updatedResources });
   };
 
-  // Toggle dropdown
-  const toggleDropdown = (index: number) => {
-    setOpenDropdownIndex(openDropdownIndex === index ? null : index);
-  };
-
-  // Close dropdowns when clicking outside
+  // Close resource dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Handle permissions dropdown
-      if (openDropdownIndex !== null && 
-          dropdownRefs.current[openDropdownIndex] && 
-          !dropdownRefs.current[openDropdownIndex]?.contains(event.target as Node)) {
-        setOpenDropdownIndex(null);
-      }
-
       // Handle resource dropdown
       if (isResourceDropdownOpen && 
           resourceDropdownRef.current && 
@@ -131,18 +117,7 @@ export default function SecurityRulesClient() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [openDropdownIndex, isResourceDropdownOpen]);
-
-  // Update dropdown refs when resources change
-  useEffect(() => {
-    // Ensure we have enough refs for all resources
-    dropdownRefs.current = dropdownRefs.current.slice(0, editingRule.resources.length);
-
-    // Close dropdown if the open dropdown index is no longer valid
-    if (openDropdownIndex !== null && openDropdownIndex >= editingRule.resources.length) {
-      setOpenDropdownIndex(null);
-    }
-  }, [editingRule.resources.length, openDropdownIndex]);
+  }, [isResourceDropdownOpen]);
 
   // Add new resource
   const handleAddResource = () => {
@@ -341,54 +316,29 @@ export default function SecurityRulesClient() {
                       </div>
                     </td>
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
-                      {/* Custom dropdown with checkboxes */}
-                      <div 
-                        className="relative" 
-                        ref={el => { dropdownRefs.current[index] = el; }}
-                      >
-                        <button
-                          type="button"
-                          className="w-full p-2 text-sm border rounded flex justify-between items-center dark:bg-gray-700 dark:border-gray-600"
-                          onClick={() => toggleDropdown(index)}
-                        >
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {resource.permissions.map((permission, i) => (
-                              <span 
-                                key={i} 
-                                className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 px-2 py-1 rounded text-xs"
-                              >
-                                {permission}
+                      <div className="flex flex-wrap gap-2">
+                        {allPermissions.map(permission => {
+                          const isEnabled = resource.permissions.includes(permission);
+                          return (
+                            <div 
+                              key={permission}
+                              className={`flex items-center p-1 rounded cursor-pointer ${
+                                isEnabled 
+                                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
+                                  : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
+                              }`}
+                              onClick={() => handlePermissionChange(index, permission)}
+                            >
+                              <span className="mr-1">
+                                {isEnabled 
+                                  ? '✓' // Green checkmark for enabled
+                                  : '✗' // Red X for disabled
+                                }
                               </span>
-                            ))}
-                            {resource.permissions.length === 0 && (
-                              <span className="text-gray-400 text-xs italic">Select permissions...</span>
-                            )}
-                          </div>
-                          <span className="ml-2 flex-shrink-0">
-                            {openDropdownIndex === index ? '▲' : '▼'}
-                          </span>
-                        </button>
-
-                        {openDropdownIndex === index && (
-                          <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto">
-                            {allPermissions.map(permission => (
-                              <div 
-                                key={permission}
-                                className="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-                                onClick={() => handlePermissionChange(index, permission)}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="mr-2"
-                                  checked={resource.permissions.includes(permission)}
-                                  onChange={() => {}} // Handled by the div's onClick
-                                  onClick={e => e.stopPropagation()} // Prevent double-triggering
-                                />
-                                <label className="cursor-pointer">{permission}</label>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              <span>{permission}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </td>
                   </tr>

@@ -10,17 +10,19 @@ type Resource = {
   permissions: Permission[];
 };
 
-type Rule = {
+type Role = {
   id: number;
   name: string;
+  description: string;
   resources: Resource[];
 };
 
 // Initial mock data
-const initialRules: Rule[] = [
+const initialRoles: Role[] = [
   {
     id: 1,
-    name: 'Default Rule',
+    name: 'Member',
+    description: 'Basic access for regular users',
     resources: [
       { name: 'Group Members', permissions: ['Read', 'Add', 'Delete'] },
       { name: 'Forum Categories', permissions: ['Read', 'Add', 'Modify', 'Delete', 'Post'] },
@@ -30,10 +32,21 @@ const initialRules: Rule[] = [
   },
   {
     id: 2,
-    name: 'Admin Rule',
+    name: 'Admin',
+    description: 'Full access for administrators',
     resources: [
       { name: 'Group Members', permissions: ['Read', 'Add', 'Delete'] },
       { name: 'Forum Categories', permissions: ['Read', 'Add', 'Modify', 'Delete', 'Post'] },
+    ]
+  },
+  {
+    id: 3,
+    name: 'Moderator',
+    description: 'Moderation capabilities for forum content',
+    resources: [
+      { name: 'Forum Categories', permissions: ['Read', 'Edit', 'Modify', 'Delete', 'Post'] },
+      { name: 'Category1', permissions: ['Read', 'Edit', 'Delete', 'Post'] },
+      { name: 'Category2', permissions: ['Read', 'Edit', 'Post'] },
     ]
   }
 ];
@@ -65,35 +78,40 @@ const permissionDescriptions: Record<Permission, string> = {
   'Post': 'Submit content to the resource'
 };
 
-export default function SecurityRulesClient() {
-  const [rules, setRules] = useState<Rule[]>(initialRules);
-  const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
-  const [editingRule, setEditingRule] = useState<Rule>(initialRules[0]);
+export default function GroupRolesClient() {
+  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [selectedRoleId, setSelectedRoleId] = useState<number>(1);
+  const [editingRole, setEditingRole] = useState<Role>(initialRoles[0]);
   const [newResourceName] = useState<string>('');
   const [isResourceDropdownOpen, setIsResourceDropdownOpen] = useState<boolean>(false);
-  const [deletingRuleId, setDeletingRuleId] = useState<number | null>(null);
+  const [deletingRoleId, setDeletingRoleId] = useState<number | null>(null);
   const resourceDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  // Get the currently selected rule
-  const selectedRule = rules.find(rule => rule.id === selectedRuleId) || rules[0];
+  // Get the currently selected role
+  const selectedRole = roles.find(role => role.id === selectedRoleId) || roles[0];
 
-  // Handle rule selection
-  const handleSelectRule = (ruleId: number) => {
-    setSelectedRuleId(ruleId);
-    const rule = rules.find(r => r.id === ruleId);
-    if (rule) {
-      setEditingRule({ ...rule });
+  // Handle role selection
+  const handleSelectRole = (roleId: number) => {
+    setSelectedRoleId(roleId);
+    const role = roles.find(r => r.id === roleId);
+    if (role) {
+      setEditingRole({ ...role });
     }
   };
 
-  // Handle rule name change
-  const handleRuleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditingRule({ ...editingRule, name: e.target.value });
+  // Handle role name change
+  const handleRoleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditingRole({ ...editingRole, name: e.target.value });
+  };
+
+  // Handle role description change
+  const handleRoleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditingRole({ ...editingRole, description: e.target.value });
   };
 
   // Handle permission change
   const handlePermissionChange = (resourceIndex: number, permission: Permission) => {
-    const updatedResources = [...editingRule.resources];
+    const updatedResources = [...editingRole.resources];
     const currentPermissions = updatedResources[resourceIndex].permissions;
 
     // Toggle the permission (add if not present, remove if present)
@@ -109,7 +127,7 @@ export default function SecurityRulesClient() {
       };
     }
 
-    setEditingRule({ ...editingRule, resources: updatedResources });
+    setEditingRole({ ...editingRole, resources: updatedResources });
   };
 
   // Close resource dropdown when clicking outside
@@ -132,89 +150,90 @@ export default function SecurityRulesClient() {
 
   // Save changes
   const handleSaveChanges = () => {
-    setRules(rules.map(rule => rule.id === editingRule.id ? editingRule : rule));
+    setRoles(roles.map(role => role.id === editingRole.id ? editingRole : role));
   };
 
-  // Add new rule
-  const handleAddRule = () => {
-    const newId = Math.max(...rules.map(rule => rule.id)) + 1;
-    const newRule: Rule = {
+  // Add new role
+  const handleAddRole = () => {
+    const newId = Math.max(...roles.map(role => role.id)) + 1;
+    const newRole: Role = {
       id: newId,
-      name: `New Rule ${newId}`,
+      name: `New ${newId}`,
+      description: '',
       resources: []
     };
 
-    setRules([...rules, newRule]);
-    setSelectedRuleId(newId);
-    setEditingRule(newRule);
+    setRoles([...roles, newRole]);
+    setSelectedRoleId(newId);
+    setEditingRole(newRole);
   };
 
-  // Delete rule
-  const handleDeleteRule = (ruleId: number) => {
-    // Set the rule as being deleted (for confirmation)
-    setDeletingRuleId(ruleId);
+  // Delete role
+  const handleDeleteRole = (roleId: number) => {
+    // Set the role as being deleted (for confirmation)
+    setDeletingRoleId(roleId);
   };
 
-  // Confirm delete rule
-  const confirmDeleteRule = () => {
-    if (deletingRuleId === null) return;
+  // Confirm delete role
+  const confirmDeleteRole = () => {
+    if (deletingRoleId === null) return;
 
-    // Filter out the rule to be deleted
-    const updatedRules = rules.filter(rule => rule.id !== deletingRuleId);
+    // Filter out the role to be deleted
+    const updatedRoles = roles.filter(role => role.id !== deletingRoleId);
 
-    // Update the rules state
-    setRules(updatedRules);
+    // Update the roles state
+    setRoles(updatedRoles);
 
-    // If the deleted rule was the selected rule, select another rule
-    if (selectedRuleId === deletingRuleId) {
-      const newSelectedId = updatedRules.length > 0 ? updatedRules[0].id : 0;
-      setSelectedRuleId(newSelectedId);
+    // If the deleted role was the selected role, select another role
+    if (selectedRoleId === deletingRoleId) {
+      const newSelectedId = updatedRoles.length > 0 ? updatedRoles[0].id : 0;
+      setSelectedRoleId(newSelectedId);
 
-      // Update the editing rule
-      const newEditingRule = updatedRules.length > 0 ? { ...updatedRules[0] } : null;
-      if (newEditingRule) {
-        setEditingRule(newEditingRule);
+      // Update the editing role
+      const newEditingRole = updatedRoles.length > 0 ? { ...updatedRoles[0] } : null;
+      if (newEditingRole) {
+        setEditingRole(newEditingRole);
       }
     }
 
-    // Reset the deleting rule id
-    setDeletingRuleId(null);
+    // Reset the deleting role id
+    setDeletingRoleId(null);
   };
 
-  // Cancel delete rule
-  const cancelDeleteRule = () => {
-    setDeletingRuleId(null);
+  // Cancel delete role
+  const cancelDeleteRole = () => {
+    setDeletingRoleId(null);
   };
 
   // Remove resource
   const handleRemoveResource = (index: number) => {
-    const updatedResources = [...editingRule.resources];
+    const updatedResources = [...editingRole.resources];
     updatedResources.splice(index, 1);
-    setEditingRule({ ...editingRule, resources: updatedResources });
+    setEditingRole({ ...editingRole, resources: updatedResources });
   };
 
   return (
     <div className="h-screen p-6 flex flex-col">
-      <h1 className="text-2xl font-bold mb-6">Security Rules</h1>
+      <h1 className="text-2xl font-bold mb-6">Group Roles</h1>
 
       {/* Confirmation Dialog */}
-      {deletingRuleId !== null && (
+      {deletingRoleId !== null && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
             <p className="mb-6">
-              Are you sure you want to delete this rule? This action cannot be undone.
+              Are you sure you want to delete this role? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 px-4 py-2 rounded"
-                onClick={cancelDeleteRule}
+                onClick={cancelDeleteRole}
               >
                 Cancel
               </button>
               <button
                 className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
-                onClick={confirmDeleteRule}
+                onClick={confirmDeleteRole}
               >
                 Delete
               </button>
@@ -224,42 +243,43 @@ export default function SecurityRulesClient() {
       )}
 
       <div className="flex flex-col md:flex-row gap-6 flex-grow overflow-hidden">
-        {/* Left Panel - Rules List */}
+        {/* Left Panel - Roles List */}
         <div className="w-full md:w-1/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow overflow-y-auto">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Rules</h2>
+            <h2 className="text-lg font-semibold">Group Roles</h2>
             <button 
               className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm"
-              onClick={handleAddRule}
+              onClick={handleAddRole}
             >
-              Add New Rule
+              Add New Role
             </button>
           </div>
 
           <ul className="space-y-2">
-            {rules.map(rule => (
+            {roles.map(role => (
               <li 
-                key={rule.id}
+                key={role.id}
                 className={`p-2 rounded ${
-                  selectedRuleId === rule.id 
+                  selectedRoleId === role.id 
                     ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100' 
                     : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <span 
-                    className="cursor-pointer flex-grow"
-                    onClick={() => handleSelectRule(rule.id)}
-                  >
-                    {rule.name}
-                  </span>
+                  <div className="cursor-pointer flex-grow flex flex-col"
+                       onClick={() => handleSelectRole(role.id)}>
+                    <span>{role.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {role.description}
+                    </span>
+                  </div>
                   <button
                     className="text-red-500 hover:text-red-700 ml-2"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteRule(rule.id);
+                      handleDeleteRole(role.id);
                     }}
-                    aria-label={`Delete ${rule.name}`}
+                    aria-label={`Delete ${role.name}`}
                   >
                     ×
                   </button>
@@ -269,17 +289,28 @@ export default function SecurityRulesClient() {
           </ul>
         </div>
 
-        {/* Main Panel - Rule Editing */}
+        {/* Main Panel - Role Editing */}
         <div className="w-full md:w-3/4 bg-white dark:bg-gray-800 p-4 rounded-lg shadow flex flex-col overflow-y-auto h-full">
-          <h2 className="text-lg font-semibold mb-4">Edit Rule: {selectedRule.name}</h2>
+          <h2 className="text-lg font-semibold mb-4">Edit Role: {selectedRole.name}</h2>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Rule Name</label>
+            <label className="block text-sm font-medium mb-1">Name</label>
             <input 
               type="text" 
               className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
-              value={editingRule.name}
-              onChange={handleRuleNameChange}
+              value={editingRole.name}
+              onChange={handleRoleNameChange}
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea 
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+              value={editingRole.description}
+              onChange={handleRoleDescriptionChange}
+              placeholder="Enter a description for this role"
+              rows={3}
             />
           </div>
 
@@ -292,7 +323,7 @@ export default function SecurityRulesClient() {
                 </tr>
               </thead>
               <tbody>
-                {editingRule.resources.map((resource, index) => (
+                {editingRole.resources.map((resource, index) => (
                   <tr key={index} className="border-b dark:border-gray-600">
                     <td className="border border-gray-200 dark:border-gray-600 p-2">
                       <div className="flex justify-between items-center">
@@ -363,17 +394,17 @@ export default function SecurityRulesClient() {
               {isResourceDropdownOpen && (
                 <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg max-h-40 overflow-y-auto">
                   {allResources
-                    .filter(resource => !editingRule.resources.some(r => r.name === resource))
+                    .filter(resource => !editingRole.resources.some(r => r.name === resource))
                     .map(resource => (
                       <div 
                         key={resource}
                         className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
                         onClick={() => {
                           setIsResourceDropdownOpen(false);
-                          setEditingRule({
-                            ...editingRule,
+                          setEditingRole({
+                            ...editingRole,
                             resources: [
-                              ...editingRule.resources,
+                              ...editingRole.resources,
                               { name: resource, permissions: [] }
                             ]
                           });
@@ -395,7 +426,7 @@ export default function SecurityRulesClient() {
           <div className="mt-4 flex justify-end gap-2">
             <button 
               className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 px-4 py-2 rounded"
-              onClick={() => handleSelectRule(selectedRuleId)}
+              onClick={() => handleSelectRole(selectedRoleId)}
             >
               Cancel
             </button>

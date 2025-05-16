@@ -25,8 +25,8 @@ export default function Home() {
             Save and see your changes instantly.
           </li>
           <li className="tracking-[-.01em]">
-            <Link href="/security-rules" className="text-blue-500 hover:underline">
-              Go to Security Rules Editor
+            <Link href="/group-roles" className="text-blue-500 hover:underline">
+              Go to Group Roles Editor
             </Link>
           </li>
         </ol>
